@@ -1,57 +1,49 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the Swift Algorithms open source project
-//
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
-// Licensed under Apache License v2.0 with Runtime Library Exception
-//
-// See https://swift.org/LICENSE.txt for license information
-//
-//===----------------------------------------------------------------------===//
+// Cycle 的数据, 仅仅是记录一下原有的 Collection 而已
+// 但是它在表现上, 要是一个循环取值的 Collection, 由于 Sequence 的取值, 是在 Iterator 这个类上表现的. 所以, 重点是 Iter 的实现.
 
-/// A collection wrapper that repeats the elements of a base collection.
+// 我们自己想要实现这样的一个 Colleciton, 也是很简单的.
+// 专门定义出一个类型来, 可以让这段代码很好的进行复用.
 public struct Cycle<Base: Collection> {
-  /// The collection to repeat.
-  public let base: Base
-  
-  @usableFromInline
-  internal init(base: Base) {
-    self.base = base
-  }
+    public let base: Base
+    internal init(base: Base) {
+        self.base = base
+    }
 }
 
+// 其实这里, 就和我们自己写的循环没有太大的区别
 extension Cycle: Sequence {
-  /// The iterator for a `Cycle` sequence.
-  public struct Iterator: IteratorProtocol {
-    @usableFromInline
-    let base: Base
-    
-    @usableFromInline
-    var current: Base.Index
-    
-    @usableFromInline
-    internal init(base: Base) {
-      self.base = base
-      self.current = base.startIndex
+    /// The iterator for a `Cycle` sequence.
+    // Iterator 是内部类型, 不需要暴露出去.
+    public struct Iterator: IteratorProtocol {
+        @usableFromInline
+        let base: Base
+        
+        @usableFromInline
+        var current: Base.Index
+        
+        @usableFromInline
+        internal init(base: Base) {
+            self.base = base
+            self.current = base.startIndex
+        }
+        
+        @inlinable
+        public mutating func next() -> Base.Element? {
+            guard !base.isEmpty else { return nil }
+            
+            if current == base.endIndex {
+                current = base.startIndex
+            }
+            
+            defer { base.formIndex(after: &current) }
+            return base[current]
+        }
     }
     
     @inlinable
-    public mutating func next() -> Base.Element? {
-      guard !base.isEmpty else { return nil }
-      
-      if current == base.endIndex {
-        current = base.startIndex
-      }
-      
-      defer { base.formIndex(after: &current) }
-      return base[current]
+    public func makeIterator() -> Iterator {
+        Iterator(base: base)
     }
-  }
-  
-  @inlinable
-  public func makeIterator() -> Iterator {
-    Iterator(base: base)
-  }
 }
 
 extension Cycle: LazySequenceProtocol where Base: LazySequenceProtocol {}
@@ -61,55 +53,12 @@ extension Cycle: LazySequenceProtocol where Base: LazySequenceProtocol {}
 //===----------------------------------------------------------------------===//
 
 extension Collection {
-  /// Returns a sequence that repeats the elements of this collection forever.
-  ///
-  /// Use the `cycled()` method to repeat the elements of a sequence or
-  /// collection forever. You can combine `cycled()` with another, finite
-  /// sequence to iterate over the two together.
-  ///
-  ///     for (evenOrOdd, number) in zip(["even", "odd"].cycled(), 0..<10) {
-  ///         print("\(number) is \(evenOrOdd)")
-  ///     }
-  ///     // 0 is even
-  ///     // 1 is odd
-  ///     // 2 is even
-  ///     // 3 is odd
-  ///     // ...
-  ///     // 9 is odd
-  ///
-  /// - Important: When called on a non-empty collection, the resulting sequence
-  ///   is infinite. Do not directly call methods that require a finite
-  ///   sequence, like `map` or `filter`, without first constraining the length
-  ///   of the cycling sequence.
-  ///
-  /// - Returns: A sequence that repeats the elements of this collection
-  ///   forever.
-  ///
-  /// - Complexity: O(1)
-  @inlinable
-  public func cycled() -> Cycle<Self> {
-    Cycle(base: self)
-  }
-  
-  /// Returns a sequence that repeats the elements of this collection the
-  /// specified number of times.
-  ///
-  /// Passing `1` as `times` results in this collection's elements being
-  /// provided a single time; passing `0` results in an empty sequence. The
-  /// `print(_:)` function in this example is never called:
-  ///
-  ///     for x in [1, 2, 3].cycled(times: 0) {
-  ///         print(x)
-  ///     }
-  ///
-  /// - Parameter times: The number of times to repeat this sequence. `times`
-  ///   must be zero or greater.
-  /// - Returns: A sequence that repeats the elements of this sequence `times`
-  ///   times.
-  ///
-  /// - Complexity: O(1)
-  @inlinable
-  public func cycled(times: Int) -> FlattenSequence<Repeated<Self>> {
-    repeatElement(self, count: times).joined()
-  }
+    public func cycled() -> Cycle<Self> {
+        Cycle(base: self)
+    }
+    
+    // 这里, 没有说在里面存储一个 times 的值, 而是使用了其他已经实现好的抽象. 
+    public func cycled(times: Int) -> FlattenSequence<Repeated<Self>> {
+        repeatElement(self, count: times).joined()
+    }
 }

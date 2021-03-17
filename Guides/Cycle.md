@@ -1,17 +1,17 @@
 # Cycle
 
 [[Source](https://github.com/apple/swift-algorithms/blob/main/Sources/Algorithms/Cycle.swift) | 
- [Tests](https://github.com/apple/swift-algorithms/blob/main/Tests/SwiftAlgorithmsTests/CycleTests.swift)]
+[Tests](https://github.com/apple/swift-algorithms/blob/main/Tests/SwiftAlgorithmsTests/CycleTests.swift)]
 
 Iterate over a collection forever, or a set number of times.
 
 ```swift
 for (odd, n) in zip([true, false].cycled(), 1...) {
-    // ...
+// ...
 }
 
 for x in (1...3).cycled(times: 3) {
-    print(x)
+print(x)
 }
 // Prints 1 through 3 three times
 ```
@@ -26,9 +26,9 @@ Two new methods are added to collections:
 
 ```swift
 extension Collection {
-    func cycled() -> Cycle<Self>
+func cycled() -> Cycle<Self>
 
-    func cycled(times: Int) -> FlattenSequence<Repeated<Self>>
+func cycled(times: Int) -> FlattenSequence<Repeated<Self>>
 }
 ```
 
